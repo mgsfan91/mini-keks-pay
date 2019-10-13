@@ -1,0 +1,11 @@
+### default H2 support
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  h2.console:
+    enabled: true
+    path: /h2-console
