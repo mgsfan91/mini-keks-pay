@@ -18,12 +18,10 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
 @RunWith(SpringRunner.class)
@@ -107,5 +105,31 @@ public class TransactionControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].saldo", is(-41.0)))
                 .andExpect(jsonPath("$[1].saldo", is(12.0)))
                 .andExpect(jsonPath("$[2].saldo", is(29.0)));
+    }
+
+
+    @Test
+    public void shouldErrorForMissingClient() throws Exception {
+
+        // given we have clients with IDs
+        MvcResult result = this.mockMvc.perform(get("/clients"))
+                .andExpect(status().isOk()).andReturn();
+        List<Client> clients = mapper.readValue(result.getResponse().getContentAsString(),
+                new TypeReference<List<Client>>() {});
+        int id0 = clients.get(0).getId();
+        int id1 = clients.get(1).getId();
+        int id2 = clients.get(2).getId();
+
+        // when we use an imaginary client
+        int id3 = id0 + id1 + id2;
+
+        // then this transaction will error
+        TransactionEntry badEntry = new TransactionEntry(100, new Integer[] {id0}, new Integer[] {id3});
+        String postJson = mapper.writer().writeValueAsString(badEntry);
+        this.mockMvc.perform(post("/transactions/cost")
+                .contentType("application/json")
+                .content(postJson))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Missing a destination client, ID: " + id3));
     }
 }
