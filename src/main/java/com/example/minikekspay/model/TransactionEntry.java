@@ -7,6 +7,6 @@ import lombok.*;
 public class TransactionEntry {
 
     private double amount;
-    private Integer[] sourcesIds;
-    private Integer[] destinationsIds;
+    private Integer[] sources;
+    private Integer[] destinations;
 }

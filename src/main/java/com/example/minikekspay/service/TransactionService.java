@@ -1,8 +1,6 @@
 package com.example.minikekspay.service;
 
-import com.example.minikekspay.entity.Client;
 import com.example.minikekspay.entity.Transaction;
-import com.example.minikekspay.exception.ClientNotFoundException;
 import com.example.minikekspay.model.TransactionEntry;
 import com.example.minikekspay.model.TransactionTypes;
 import com.example.minikekspay.repository.ClientRepository;
@@ -30,8 +28,8 @@ public class TransactionService {
         Transaction trxInit = new Transaction(TransactionTypes.COST, trxEntry);
         Transaction trxPreProcess = this.transactionRepository.save(trxInit);
 
-        addAmountToClients(trxEntry.getSourcesIds(), trxEntry.getAmount());
-        deductAmountFromClients(trxEntry.getDestinationsIds(), trxEntry.getAmount());
+        modifyClients(trxEntry.getSources(), trxEntry.getAmount(), true);
+        modifyClients(trxEntry.getDestinations(), trxEntry.getAmount(), false);
 
         trxPreProcess.setProcessed(true);
         return this.transactionRepository.save(trxPreProcess);
@@ -42,35 +40,27 @@ public class TransactionService {
         Transaction trxInit = new Transaction(TransactionTypes.GAIN, trxEntry);
         Transaction trxPreProcess = this.transactionRepository.save(trxInit);
 
-        deductAmountFromClients(trxEntry.getSourcesIds(), trxEntry.getAmount());
-        addAmountToClients(trxEntry.getDestinationsIds(), trxEntry.getAmount());
+        modifyClients(trxEntry.getSources(), trxEntry.getAmount(), false);
+        modifyClients(trxEntry.getDestinations(), trxEntry.getAmount(), true);
 
         trxPreProcess.setProcessed(true);
         return this.transactionRepository.save(trxPreProcess);
     }
 
-
     @Transactional
-    void addAmountToClients(Integer[] clientsIds, double amount) {
+    void modifyClients(Integer[] clientsIds, double amount, boolean addFlag) {
         double singleAmount = amount / clientsIds.length;
         for (Integer clientId: clientsIds) {
-            Client client = this.clientRepository.findById(clientId).orElseThrow(() ->
-                    new ClientNotFoundException("Missing a client while adding amounts, ID: " + clientId));
-            double saldo = client.getSaldo();
-            client.setSaldo(saldo + singleAmount);
-            this.clientRepository.save(client);
-        }
-    }
-
-    @Transactional
-    void deductAmountFromClients(Integer[] clientsIds, double amount) {
-        double singleAmount = amount / clientsIds.length;
-        for (Integer clientId: clientsIds) {
-            Client client = this.clientRepository.findById(clientId).orElseThrow(() ->
-                    new ClientNotFoundException("Missing a client while deducting amounts, ID: " + clientId));
-            double saldo = client.getSaldo();
-            client.setSaldo(saldo - singleAmount);
-            this.clientRepository.save(client);
+            this.clientRepository.findById(clientId).ifPresent(client -> {
+                double saldo = client.getSaldo();
+                if (addFlag) {
+                    client.setSaldo(saldo + singleAmount);
+                }
+                else {
+                    client.setSaldo(saldo - singleAmount);
+                }
+                this.clientRepository.save(client);
+            });
         }
     }
 }

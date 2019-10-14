@@ -40,8 +40,8 @@ public class Transaction {
     public Transaction(TransactionTypes type, TransactionEntry trxEntry) {
         this.type = type;
         this.amount = trxEntry.getAmount();
-        this.sources = Arrays.toString(trxEntry.getSourcesIds());
-        this.destinations = Arrays.toString(trxEntry.getDestinationsIds());
+        this.sources = Arrays.toString(trxEntry.getSources());
+        this.destinations = Arrays.toString(trxEntry.getDestinations());
         this.processed = false;
     }
 }
