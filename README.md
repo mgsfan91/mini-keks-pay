@@ -33,7 +33,7 @@ Check them.
 curl -i localhost:8090/clients
 ```
 
-John(id==1) borrows Julie(id==2) a 50. (it's a cost for him)
+John(id==1) loans Julie(id==2) a 50. (it's a cost for him)
 ```
 curl -i -X POST localhost:8090/transactions/cost -H "Content-Type: application/json" -d "{ \"amount\": 50, \"sources\": [1], \"destinations\": [2]}"
 ```
