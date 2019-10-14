@@ -1,15 +1,19 @@
 package com.example.minikekspay.service;
 
 import com.example.minikekspay.entity.Transaction;
+import com.example.minikekspay.exception.ClientNotFoundException;
 import com.example.minikekspay.model.TransactionEntry;
 import com.example.minikekspay.model.TransactionTypes;
 import com.example.minikekspay.repository.ClientRepository;
 import com.example.minikekspay.repository.TransactionRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Arrays;
 
 
+@Slf4j
 @Service
 public class TransactionService {
 
@@ -24,6 +28,7 @@ public class TransactionService {
 
 
     public Transaction submitCost(TransactionEntry trxEntry) {
+        this.assertClients(trxEntry);
 
         Transaction trxInit = new Transaction(TransactionTypes.COST, trxEntry);
         Transaction trxPreProcess = this.transactionRepository.save(trxInit);
@@ -36,6 +41,7 @@ public class TransactionService {
     }
 
     public Transaction submitGain(TransactionEntry trxEntry) {
+        this.assertClients(trxEntry);
 
         Transaction trxInit = new Transaction(TransactionTypes.GAIN, trxEntry);
         Transaction trxPreProcess = this.transactionRepository.save(trxInit);
@@ -61,6 +67,21 @@ public class TransactionService {
                 }
                 this.clientRepository.save(client);
             });
+        }
+    }
+
+    void assertClients(TransactionEntry entry) {
+        String sources = Arrays.toString(entry.getSources());
+        String destinations = Arrays.toString(entry.getDestinations());
+        log.info("Assert amount " + entry.getAmount() + " from " + sources + " to " + destinations);
+
+        for (Integer clientId: entry.getSources()) {
+            this.clientRepository.findById(clientId).orElseThrow(() ->
+                    new ClientNotFoundException("Missing a source client, ID: " + clientId));
+        }
+        for (Integer clientId: entry.getDestinations()) {
+            this.clientRepository.findById(clientId).orElseThrow(() ->
+                    new ClientNotFoundException("Missing a destination client, ID: " + clientId));
         }
     }
 }
